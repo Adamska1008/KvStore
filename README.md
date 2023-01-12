@@ -33,3 +33,5 @@ Options:
   -V, --version  Print version information
 ```
 * `-V --version` Print version information
+
+For more information, run `cargo doc --open` to see the document of `KvStore`.
