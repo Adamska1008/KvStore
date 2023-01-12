@@ -4,7 +4,7 @@ use crate::{Command, Result};
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fs;
-use std::fs::File;
+use std::fs::{File, OpenOptions};
 use std::io::{Seek, SeekFrom};
 use std::path::PathBuf;
 
@@ -100,13 +100,28 @@ pub fn collect_file_stems(path: impl Into<PathBuf>) -> Result<Vec<u64>> {
     Ok(file_stems)
 }
 
-/// ```
-///
-/// ```
-pub fn new_writer(dir_path: &(impl Into<PathBuf> + Clone), generator: &mut FileNameGenerator) -> Result<BufWriterWithOffset<File>> {
+/// Open file as buf_writer with given path and file_stem
+pub fn new_writer(dir_path: &(impl Into<PathBuf> + Clone), file_stem: u64) -> Result<BufWriterWithOffset<File>> {
     let mut writer_path: PathBuf = (*dir_path).clone().into();
-    writer_path.push(generator.current());
-    let new_log = File::create(writer_path)?;
+    writer_path.push(file_stem.to_string() + ".log");
+    let new_log = OpenOptions::new()
+        .create(true)
+        .read(true)
+        .write(true)
+        .open(writer_path)?;
     let writer = BufWriterWithOffset::new(new_log)?;
     Ok(writer)
+}
+
+/// Open file as buf_reader with given path and file_stem
+pub fn new_reader(dir_path: &(impl Into<PathBuf> + Clone), file_stem: u64) -> Result<BufReaderWithOffset<File>> {
+    let mut reader_path: PathBuf = (*dir_path).clone().into();
+    reader_path.push(file_stem.to_string() + ".log");
+    let new_log = OpenOptions::new()
+        .create(true)
+        .read(true)
+        .write(true)
+        .open(reader_path)?;
+    let reader = BufReaderWithOffset::new(new_log)?;
+    Ok(reader)
 }

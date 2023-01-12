@@ -5,7 +5,7 @@ use std::fmt::Debug;
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Command {
     SetCommand { key: String, value: String },
-    RemoveCommand { key: String },
+    RemoveCommand { key: String }
 }
 
 impl Command {
