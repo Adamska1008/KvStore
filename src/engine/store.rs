@@ -58,6 +58,10 @@ impl KvStore {
     /// # Errors
     /// * `KvError::KeyNotFound` key string is not found.
     /// * `KvError::IoError` fail due to I/O errors
+    /// # Return value
+    /// * `Ok(Some(value))`: Key exists and corresponding value is `value`.
+    /// * `Ok(None)`: Key not exists.
+    /// * `Err(Error)`: Some error occurs.
     /// # Examples
     /// ```
     /// use tempfile::TempDir;
@@ -93,6 +97,10 @@ impl KvStore {
     /// # Errors
     /// * `KvError::IoError` fail due to I/O errors
     /// * `KvError::KeyNotFound` fail due to key not found
+    /// # Return value
+    /// * `OK(Some())`: Key exists and being successfully removed.
+    /// * `Ok(None)`: Key not exists.
+    /// * `Err(Error)`: Some error occurs.
     /// # Examples
     /// ```
     /// use tempfile::TempDir;

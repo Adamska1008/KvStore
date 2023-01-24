@@ -38,7 +38,8 @@ impl FileNameGenerator {
 }
 
 /// Read commands from log file and store them to key_map
-/// In consideration of data consistency, the `reader` must be a BufReaderWithOffset
+/// In consideration of data consistency, the `reader` must be a `BufReaderWithOffset`.
+///
 /// # Arguments
 /// * `key_map` hash map that read command will be stored in
 /// * `reader` buf reader with offset, read commands from it
@@ -77,7 +78,7 @@ pub fn read_log(
 /// ```rust
 /// use std::fs::File;
 /// use tempfile::TempDir;
-/// use kvs::tools::collect_file_stems;
+/// use kvs::engine::tools::collect_file_stems;
 /// let tempdir = TempDir::new().expect("failed to create temporary directory");
 /// File::create(tempdir.path().to_str().unwrap().to_owned() + "/0.log").expect("failed to create file 0.log");
 /// File::create(tempdir.path().to_str().unwrap().to_owned() + "/1.log").expect("failed to create file 1.log");
