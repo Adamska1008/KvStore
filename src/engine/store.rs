@@ -30,7 +30,7 @@ impl KvStore {
     /// * `value` value string
     /// # Errors
     /// * `KvError::IoError` fail due to I/O errors
-    /// * `KvError::SerdeError` fail parsing to ron string
+    /// * `KvError::SerdeError` fail parsing to json string
     /// # Examples
     /// ```rust
     /// use tempfile::TempDir;

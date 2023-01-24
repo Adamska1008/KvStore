@@ -1,10 +1,12 @@
 #![feature(let_chains)]
 #![feature(is_some_and)]
 
+use std::io::{Read, Write};
+use std::net::TcpStream;
 use clap::{Parser, Subcommand};
-use kvs::engine::{KvError, Result};
-use kvs::engine::KvStore;
+use kvs::engine::{Result};
 use std::string::String;
+use serde_resp::RESPType;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -34,33 +36,88 @@ enum Commands {
 }
 
 fn main() -> Result<()> {
-    let mut cli = Cli::parse();
-    if cli.addr == None {
-        cli.addr = Some("127.0.0.1:4000".to_owned());
-    }
+    let cli = Cli::parse();
+    let addr = if let Some(addr) = cli.addr { addr } else { "127.0.0.1:4000".to_owned() };
+    let mut stream = TcpStream::connect(addr)?;
     match &cli.command {
         Commands::Set { key, value } => {
-            let mut store = KvStore::open(".")?;
-            store.set(key, value)
+            let command = RESPType::Array(vec![
+                RESPType::BulkString("set".as_bytes().to_vec()),
+                RESPType::BulkString(key.as_bytes().to_vec()),
+                RESPType::BulkString(value.as_bytes().to_vec())
+            ]);
+            let cmd_str = serde_resp::ser::to_string(&command).unwrap();
+            stream.write(cmd_str.as_bytes())?;
+            let mut response = String::new();
+            stream.read_to_string(&mut response).unwrap();
+            println!("{response}");
+            Ok(())
         },
         Commands::Get { key } => {
-            let mut store = KvStore::open(".")?;
-            if let Some(value) = store.get(key)? {
-                println!("{value}");
-                Ok(())
-            } else {
-                println!("Key not found: {key}");
-                Err(KvError::KeyNotFound(key.to_owned()))
+            let command = RESPType::Array(vec![
+                RESPType::BulkString("get".as_bytes().to_vec()),
+                RESPType::BulkString(key.as_bytes().to_vec()),
+            ]);
+            let cmd_str= serde_resp::ser::to_string(&command).unwrap();
+            stream.write(cmd_str.as_bytes())?;
+            stream.flush()?;
+            let mut response = String::new();
+            stream.read_to_string(&mut response).unwrap();
+            let resp: RESPType = serde_resp::de::from_str(&response).unwrap();
+            // currently only bulk str
+            match resp {
+                RESPType::BulkString(buf) => {
+                    println!("{}", String::from_utf8(buf).unwrap())
+                }
+                _ => { println!() }
             }
+            Ok(())
         },
         Commands::Remove { key } => {
-            let mut store = KvStore::open(".")?;
-            if store.remove(key)? == None {
-                println!("Key not found");
-                Err(KvError::KeyNotFound(key.to_owned()))
-            } else {
-                Ok(())
+            let command = RESPType::Array(vec![
+                RESPType::BulkString("rm".as_bytes().to_vec()),
+                RESPType::BulkString(key.as_bytes().to_vec())
+            ]);
+            let cmd_str = serde_resp::to_string(&command).unwrap();
+            stream.write(cmd_str.as_bytes())?;
+            stream.flush()?;
+            let mut response = String::new();
+            stream.read_to_string(&mut response).unwrap();
+            let resp: RESPType = serde_resp::from_str(&response).unwrap();
+            match resp {
+                RESPType::SimpleString(str) => {
+                    println!("{str}");
+                },
+                RESPType::None => {
+                    println!("Key not found");
+                }
+                _ => {}
             }
+            Ok(())
         }
     }
+    // match &cli.command {
+    //     Commands::Set { key, value } => {
+    //         let mut store = KvStore::open(".")?;
+    //         store.set(key, value)
+    //     },
+    //     Commands::Get { key } => {
+    //         let mut store = KvStore::open(".")?;
+    //         if let Some(value) = store.get(key)? {
+    //             println!("{value}");
+    //             Ok(())
+    //         } else {
+    //             println!("Key not found: {key}");
+    //         }
+    //     },
+    //     Commands::Remove { key } => {
+    //         let mut store = KvStore::open(".")?;
+    //         if store.remove(key)? == None {
+    //             println!("Key not found");
+    //             Err(KvError::KeyNotFound(key.to_owned()))
+    //         } else {
+    //             Ok(())
+    //         }
+    //     }
+    // }
 }
