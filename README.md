@@ -34,4 +34,7 @@ Options:
 ```
 * `-V --version` Print version information
 
+### Use as package
+To use `KvStore` in your code(not advised, this is simply a personal coding practise), `import kvs::KvStore`.
+
 For more information, run `cargo doc --open` to see the document of `KvStore`.
