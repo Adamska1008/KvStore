@@ -1,7 +1,7 @@
 #![feature(let_chains)]
 #![feature(is_some_and)]
 
-use clap::{arg, Command, Parser, Subcommand};
+use clap::{Parser, Subcommand};
 use kvs::engine::{KvError, Result};
 use kvs::engine::KvStore;
 use std::string::String;
@@ -9,6 +9,8 @@ use std::string::String;
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
+    #[arg(short, long, value_name = "IP-PORT")]
+    addr: Option<String>,
     #[command(subcommand)]
     command: Commands
 }
@@ -25,13 +27,17 @@ enum Commands {
         value: String
     },
     #[command(about = "Remove key-value string from kv store with given key", long_about = None)]
+    #[command(name="rm")]
     Remove {
         key: String
     }
 }
 
 fn main() -> Result<()> {
-    let cli = Cli::parse();
+    let mut cli = Cli::parse();
+    if cli.addr == None {
+        cli.addr = Some("127.0.0.1:4000".to_owned());
+    }
     match &cli.command {
         Commands::Set { key, value } => {
             let mut store = KvStore::open(".")?;
