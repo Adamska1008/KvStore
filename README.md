@@ -16,7 +16,7 @@ Currently, it supports only few commands:
 * `kvs rm <KEY>`: Remove a key-value pair with given key. Exit with non-zero if `<KEY>` is not in database.
 
 ### Options
-*`-h --help` display help information like:
+* `-h --help` display help information like:
 ```bash
 Demo program that demonstrates the usage of "KvStore" core.
 

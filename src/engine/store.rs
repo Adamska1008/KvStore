@@ -1,9 +1,9 @@
-use crate::command::CommandPos;
-use crate::error::Result;
-use crate::io::{BufReaderWithOffset, BufWriterWithOffset};
-use crate::tools::{collect_file_stems, read_log, FileNameGenerator};
-use crate::KvError::UnexpectedCmdType;
-use crate::{tools, Command};
+use crate::engine::command::CommandPos;
+use crate::engine::Result;
+use crate::engine::io::{BufReaderWithOffset, BufWriterWithOffset};
+use crate::engine::tools::{collect_file_stems, read_log, FileNameGenerator};
+use crate::engine::KvError::UnexpectedCmdType;
+use crate::engine::{tools, Command};
 use std::collections::HashMap;
 use std::fs;
 use std::fs::{File, OpenOptions};
@@ -34,7 +34,7 @@ impl KvStore {
     /// # Examples
     /// ```rust
     /// use tempfile::TempDir;
-    /// use kvs::store::KvStore;
+    /// use kvs::engine::store::KvStore;
     /// let temp_dir = TempDir::new().unwrap();
     /// let mut kvs = KvStore::open(temp_dir.path()).unwrap();
     /// assert!(kvs.set("name", "Adam").is_ok());
@@ -61,7 +61,7 @@ impl KvStore {
     /// # Examples
     /// ```
     /// use tempfile::TempDir;
-    /// use kvs::store::KvStore;
+    /// use kvs::engine::store::KvStore;
     /// let temp_dir = TempDir::new().expect("");
     /// let mut kvs = KvStore::open(temp_dir.path()).unwrap();
     /// kvs.set("name", "adam").unwrap();
@@ -96,7 +96,7 @@ impl KvStore {
     /// # Examples
     /// ```
     /// use tempfile::TempDir;
-    /// use kvs::store::KvStore;
+    /// use kvs::engine::store::KvStore;
     /// let temp_dir = TempDir::new().expect("");
     /// let mut kvs = KvStore::open(temp_dir.path()).unwrap();
     /// assert_eq!(kvs.remove("name").unwrap(), None);
@@ -125,7 +125,7 @@ impl KvStore {
     /// # Examples
     /// ```rust
     /// use tempfile::TempDir;
-    /// use kvs::store::KvStore;
+    /// use kvs::engine::store::KvStore;
     /// let temp_dir = TempDir::new().expect("");
     /// let kvs = KvStore::open(temp_dir.path()).expect("");
     /// ```
@@ -213,7 +213,7 @@ impl KvStore {
     /// # Example
     /// ```rust
     /// use tempfile::TempDir;
-    /// use kvs::KvStore;
+    /// use kvs::engine::KvStore;
     /// let temp_dir = TempDir::new().unwrap();
     /// let mut store = KvStore::open(temp_dir.path()).unwrap();
     /// store.set_compact_threshold(500u64);

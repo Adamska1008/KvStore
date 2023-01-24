@@ -1,6 +1,6 @@
-use crate::command::CommandPos;
-use crate::io::{BufReaderWithOffset, BufWriterWithOffset};
-use crate::{Command, Result};
+use crate::engine::command::CommandPos;
+use crate::engine::io::{BufReaderWithOffset, BufWriterWithOffset};
+use crate::engine::{Command, Result};
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fs;
