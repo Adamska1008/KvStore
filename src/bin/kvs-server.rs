@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter};
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use clap::{Parser, ValueEnum};
-use serde_resp::RESPType;
+use serde_resp::{bulk, none, RESPType};
 use kvs::engine::{KvStore, Result};
 
 #[derive(Parser)]
@@ -60,9 +60,9 @@ fn handle_connection(mut stream: TcpStream, kvs: &mut KvStore) {
             let key = unwrap_bulk_str(&arr[1]);
             log::debug!("receive command: get {}", key);
             let resp_value = if let Some(value) = kvs.get(&key).unwrap() {
-                RESPType::BulkString(value.as_bytes().to_vec())
+                bulk!(value)
             } else {
-                RESPType::None
+                none!()
             };
             let response = serde_resp::to_string(&resp_value).unwrap();
             stream.write(response.as_bytes()).unwrap();
@@ -73,7 +73,7 @@ fn handle_connection(mut stream: TcpStream, kvs: &mut KvStore) {
             let value = unwrap_bulk_str(&arr[2]);
             log::debug!("receive command: set {} {}", key, value);
             kvs.set(&key, &value).unwrap();
-            let ok = RESPType::SimpleString("OK".to_owned());
+            let ok = RESPType::ok();
             let response = serde_resp::to_string(&ok).unwrap();
             stream.write(response.as_bytes()).unwrap();
             stream.flush().unwrap();
@@ -82,7 +82,7 @@ fn handle_connection(mut stream: TcpStream, kvs: &mut KvStore) {
             let key = unwrap_bulk_str(&arr[1]);
             log::debug!("receive command: rm {}", key);
             let resp_value = if kvs.remove(&key).unwrap() == None {
-                RESPType::None
+                none!()
             } else {
                 RESPType::ok()
             };

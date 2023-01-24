@@ -6,7 +6,7 @@ use std::net::TcpStream;
 use clap::{Parser, Subcommand};
 use kvs::engine::{Result};
 use std::string::String;
-use serde_resp::RESPType;
+use serde_resp::{array, bulk, RESPType};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -41,11 +41,12 @@ fn main() -> Result<()> {
     let mut stream = TcpStream::connect(addr)?;
     match &cli.command {
         Commands::Set { key, value } => {
-            let command = RESPType::Array(vec![
-                RESPType::BulkString("set".as_bytes().to_vec()),
-                RESPType::BulkString(key.as_bytes().to_vec()),
-                RESPType::BulkString(value.as_bytes().to_vec())
-            ]);
+            // let command = RESPType::Array(vec![
+            //     RESPType::BulkString("set".as_bytes().to_vec()),
+            //     RESPType::BulkString(key.as_bytes().to_vec()),
+            //     RESPType::BulkString(value.as_bytes().to_vec())
+            // ]);
+            let command = array!(bulk!("set"), bulk!(key), bulk!(value));
             let cmd_str = serde_resp::ser::to_string(&command).unwrap();
             stream.write(cmd_str.as_bytes())?;
             let mut response = String::new();
@@ -54,10 +55,11 @@ fn main() -> Result<()> {
             Ok(())
         },
         Commands::Get { key } => {
-            let command = RESPType::Array(vec![
-                RESPType::BulkString("get".as_bytes().to_vec()),
-                RESPType::BulkString(key.as_bytes().to_vec()),
-            ]);
+            // let command = RESPType::Array(vec![
+            //     RESPType::BulkString("get".as_bytes().to_vec()),
+            //     RESPType::BulkString(key.as_bytes().to_vec()),
+            // ]);
+            let command = array!(bulk!("get"), bulk!(key));
             let cmd_str= serde_resp::ser::to_string(&command).unwrap();
             stream.write(cmd_str.as_bytes())?;
             stream.flush()?;
@@ -74,10 +76,11 @@ fn main() -> Result<()> {
             Ok(())
         },
         Commands::Remove { key } => {
-            let command = RESPType::Array(vec![
-                RESPType::BulkString("rm".as_bytes().to_vec()),
-                RESPType::BulkString(key.as_bytes().to_vec())
-            ]);
+            // let command = RESPType::Array(vec![
+            //     RESPType::BulkString("rm".as_bytes().to_vec()),
+            //     RESPType::BulkString(key.as_bytes().to_vec())
+            // ]);
+            let command = array!(bulk!("rm"), bulk!(key));
             let cmd_str = serde_resp::to_string(&command).unwrap();
             stream.write(cmd_str.as_bytes())?;
             stream.flush()?;

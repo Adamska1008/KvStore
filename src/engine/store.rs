@@ -116,8 +116,8 @@ impl KvStore {
         if let Some(old_cmd_pos) = self.key_map.remove(key) {
             self.uncompacted += old_cmd_pos.len;
             let cmd = Command::rm(key).as_json()?;
-            self.writer.flush()?;
             self.writer.write(cmd.as_bytes())?;
+            self.writer.flush()?;
             self.uncompacted += cmd.len() as u64;
             self.compact()?;
             Ok(Some(()))
