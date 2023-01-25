@@ -1,9 +1,8 @@
-use crate::engine::command::CommandPos;
-use crate::engine::Result;
+use crate::engine::command::{Command, CommandPos};
+use crate::error::Result;
 use crate::engine::io::{BufReaderWithOffset, BufWriterWithOffset};
-use crate::engine::tools::{collect_file_stems, read_log, FileNameGenerator};
-use crate::engine::KvError::UnexpectedCmdType;
-use crate::engine::{tools, Command};
+use crate::engine::tools::{self, collect_file_stems, read_log, FileNameGenerator};
+use crate::error::KvError::UnexpectedCmdType;
 use std::collections::HashMap;
 use std::fs;
 use std::fs::{File, OpenOptions};
@@ -34,7 +33,7 @@ impl KvStore {
     /// # Examples
     /// ```rust
     /// use tempfile::TempDir;
-    /// use kvs::engine::store::KvStore;
+    /// use kvs::engine::KvStore;
     /// let temp_dir = TempDir::new().unwrap();
     /// let mut kvs = KvStore::open(temp_dir.path()).unwrap();
     /// assert!(kvs.set("name", "Adam").is_ok());
@@ -65,7 +64,7 @@ impl KvStore {
     /// # Examples
     /// ```
     /// use tempfile::TempDir;
-    /// use kvs::engine::store::KvStore;
+    /// use kvs::engine::KvStore;
     /// let temp_dir = TempDir::new().expect("");
     /// let mut kvs = KvStore::open(temp_dir.path()).unwrap();
     /// kvs.set("name", "adam").unwrap();
@@ -104,7 +103,7 @@ impl KvStore {
     /// # Examples
     /// ```
     /// use tempfile::TempDir;
-    /// use kvs::engine::store::KvStore;
+    /// use kvs::engine::KvStore;
     /// let temp_dir = TempDir::new().expect("");
     /// let mut kvs = KvStore::open(temp_dir.path()).unwrap();
     /// assert_eq!(kvs.remove("name").unwrap(), None);
@@ -133,7 +132,7 @@ impl KvStore {
     /// # Examples
     /// ```rust
     /// use tempfile::TempDir;
-    /// use kvs::engine::store::KvStore;
+    /// use kvs::engine::KvStore;
     /// let temp_dir = TempDir::new().expect("");
     /// let kvs = KvStore::open(temp_dir.path()).expect("");
     /// ```

@@ -1,4 +1,4 @@
-use crate::engine::Result;
+use crate::error::Result;
 use std::io::{self, BufReader, BufWriter, Read, Seek, SeekFrom, Write};
 
 pub struct BufReaderWithOffset<R: Read + Seek> {

@@ -1,12 +1,12 @@
-pub mod command;
-pub mod error;
-pub mod io;
-pub mod store;
-pub mod tools;
+mod command;
+mod io;
+mod store;
+mod tools;
 
 pub use command::Command;
-pub use error::{KvError, Result};
 pub use store::KvStore;
+
+use crate::error::Result;
 
 pub trait KvsEngine {
     fn set(&mut self, key: String, value: String) -> Result<()>;

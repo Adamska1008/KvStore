@@ -1,4 +1,4 @@
-use crate::engine::Result;
+use crate::error::Result;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 

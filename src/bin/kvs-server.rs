@@ -3,7 +3,8 @@ use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use clap::{Parser, ValueEnum};
 use serde_resp::{bulk, none, RESPType};
-use kvs::engine::{KvStore, Result};
+use kvs::Result;
+use kvs::KvStore;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -52,7 +53,7 @@ fn read_to_end(stream: &mut TcpStream) -> String {
 
 fn handle_connection(mut stream: TcpStream, kvs: &mut KvStore) {
     let input=  read_to_end(&mut stream);
-    let command: RESPType = serde_resp::de::from_str(&input).unwrap();
+    let command: RESPType = serde_resp::from_str(&input).unwrap();
     let arr = if let RESPType::Array(arr) = command { arr } else { panic!("not a resp array") };
     let cmd = unwrap_bulk_str(&arr[0]);
     match cmd.as_str() {

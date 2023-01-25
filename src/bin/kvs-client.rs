@@ -4,7 +4,7 @@
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use clap::{Parser, Subcommand};
-use kvs::engine::{Result};
+use kvs::{Request, Result};
 use std::string::String;
 use serde_resp::{array, bulk, RESPType};
 
@@ -41,13 +41,8 @@ fn main() -> Result<()> {
     let mut stream = TcpStream::connect(addr)?;
     match &cli.command {
         Commands::Set { key, value } => {
-            // let command = RESPType::Array(vec![
-            //     RESPType::BulkString("set".as_bytes().to_vec()),
-            //     RESPType::BulkString(key.as_bytes().to_vec()),
-            //     RESPType::BulkString(value.as_bytes().to_vec())
-            // ]);
-            let command = array!(bulk!("set"), bulk!(key), bulk!(value));
-            let cmd_str = serde_resp::ser::to_string(&command).unwrap();
+            let command: RESPType = Request::set(key, value).into();
+            let cmd_str = serde_resp::to_string(&command).unwrap();
             stream.write(cmd_str.as_bytes())?;
             let mut response = String::new();
             stream.read_to_string(&mut response).unwrap();
@@ -55,17 +50,13 @@ fn main() -> Result<()> {
             Ok(())
         },
         Commands::Get { key } => {
-            // let command = RESPType::Array(vec![
-            //     RESPType::BulkString("get".as_bytes().to_vec()),
-            //     RESPType::BulkString(key.as_bytes().to_vec()),
-            // ]);
-            let command = array!(bulk!("get"), bulk!(key));
-            let cmd_str= serde_resp::ser::to_string(&command).unwrap();
+            let command: RESPType = Request::get(key).into();
+            let cmd_str= serde_resp::to_string(&command).unwrap();
             stream.write(cmd_str.as_bytes())?;
             stream.flush()?;
             let mut response = String::new();
             stream.read_to_string(&mut response).unwrap();
-            let resp: RESPType = serde_resp::de::from_str(&response).unwrap();
+            let resp: RESPType = serde_resp::from_str(&response).unwrap();
             // currently only bulk str
             match resp {
                 RESPType::BulkString(buf) => {
@@ -76,11 +67,7 @@ fn main() -> Result<()> {
             Ok(())
         },
         Commands::Remove { key } => {
-            // let command = RESPType::Array(vec![
-            //     RESPType::BulkString("rm".as_bytes().to_vec()),
-            //     RESPType::BulkString(key.as_bytes().to_vec())
-            // ]);
-            let command = array!(bulk!("rm"), bulk!(key));
+            let command: RESPType = Request::Remove { key: key.clone() }.into();
             let cmd_str = serde_resp::to_string(&command).unwrap();
             stream.write(cmd_str.as_bytes())?;
             stream.flush()?;
@@ -99,28 +86,4 @@ fn main() -> Result<()> {
             Ok(())
         }
     }
-    // match &cli.command {
-    //     Commands::Set { key, value } => {
-    //         let mut store = KvStore::open(".")?;
-    //         store.set(key, value)
-    //     },
-    //     Commands::Get { key } => {
-    //         let mut store = KvStore::open(".")?;
-    //         if let Some(value) = store.get(key)? {
-    //             println!("{value}");
-    //             Ok(())
-    //         } else {
-    //             println!("Key not found: {key}");
-    //         }
-    //     },
-    //     Commands::Remove { key } => {
-    //         let mut store = KvStore::open(".")?;
-    //         if store.remove(key)? == None {
-    //             println!("Key not found");
-    //             Err(KvError::KeyNotFound(key.to_owned()))
-    //         } else {
-    //             Ok(())
-    //         }
-    //     }
-    // }
 }
