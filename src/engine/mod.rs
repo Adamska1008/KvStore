@@ -1,15 +1,11 @@
-mod command;
-mod io;
-mod store;
-mod tools;
+mod kvstore;
 
-pub use command::Command;
-pub use store::KvStore;
+pub use kvstore::KvStore;
 
-use crate::error::Result;
+use crate::Result;
 
 pub trait KvsEngine {
-    fn set(&mut self, key: String, value: String) -> Result<()>;
-    fn get(&mut self, key: String) -> Result<Option<String>>;
-    fn remove(&mut self, key: String) -> Result<()>;
+    fn set(&mut self, key: &str, value: &str) -> Result<()>;
+    fn get(&mut self, key: &str) -> Result<Option<String>>;
+    fn remove(&mut self, key: &str) -> Result<Option<()>>;
 }

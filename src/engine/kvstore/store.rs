@@ -1,13 +1,14 @@
-use crate::engine::command::{Command, CommandPos};
 use crate::error::Result;
-use crate::engine::io::{BufReaderWithOffset, BufWriterWithOffset};
-use crate::engine::tools::{self, collect_file_stems, read_log, FileNameGenerator};
 use crate::error::KvError::UnexpectedCmdType;
 use std::collections::HashMap;
 use std::fs;
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::PathBuf;
+use crate::engine::KvsEngine;
+use crate::engine::kvstore::command::{Command, CommandPos};
+use crate::engine::kvstore::io::{BufReaderWithOffset, BufWriterWithOffset};
+use crate::engine::kvstore::tools::{self, FileNameGenerator};
 
 const DEFAULT_COMPACTION_THRESHOLD: u64 = 1000;
 
@@ -22,7 +23,7 @@ pub struct KvStore {
     dir_path: PathBuf,
 }
 
-impl KvStore {
+impl KvsEngine for KvStore {
     /// Set string key-value in KvStore.
     /// # Arguments
     /// * `key` key string
@@ -33,12 +34,12 @@ impl KvStore {
     /// # Examples
     /// ```rust
     /// use tempfile::TempDir;
-    /// use kvs::engine::KvStore;
+    /// use kvs::KvStore;
     /// let temp_dir = TempDir::new().unwrap();
     /// let mut kvs = KvStore::open(temp_dir.path()).unwrap();
     /// assert!(kvs.set("name", "Adam").is_ok());
     /// ```
-    pub fn set(&mut self, key: &str, value: &str) -> Result<()> {
+    fn set(&mut self, key: &str, value: &str) -> Result<()> {
         let cmd = Command::set(key, value).as_json()?;
         let offset = self.writer.offset;
         let len = self.writer.write(cmd.as_bytes())?;
@@ -64,14 +65,14 @@ impl KvStore {
     /// # Examples
     /// ```
     /// use tempfile::TempDir;
-    /// use kvs::engine::KvStore;
+    /// use kvs::KvStore;
     /// let temp_dir = TempDir::new().expect("");
     /// let mut kvs = KvStore::open(temp_dir.path()).unwrap();
     /// kvs.set("name", "adam").unwrap();
     /// assert_eq!(kvs.get("name").unwrap(), Some("adam".to_owned()));
     /// assert_eq!(kvs.get("gender").unwrap(), None);
     /// ```
-    pub fn get(&mut self, key: &str) -> Result<Option<String>> {
+    fn get(&mut self, key: &str) -> Result<Option<String>> {
         if let Some(cmd_pos) = self.key_map.get(key) {
             let reader = self.reader_map.get_mut(&cmd_pos.file_stem).expect(&format!(
                 "log file: {}.log is not cached in memory",
@@ -103,7 +104,7 @@ impl KvStore {
     /// # Examples
     /// ```
     /// use tempfile::TempDir;
-    /// use kvs::engine::KvStore;
+    /// use kvs::KvStore;
     /// let temp_dir = TempDir::new().expect("");
     /// let mut kvs = KvStore::open(temp_dir.path()).unwrap();
     /// assert_eq!(kvs.remove("name").unwrap(), None);
@@ -111,7 +112,7 @@ impl KvStore {
     /// assert_eq!(kvs.remove("name").unwrap(), Some(()));
     /// assert_eq!(kvs.remove("name").unwrap(), None);
     /// ```
-    pub fn remove(&mut self, key: &str) -> Result<Option<()>> {
+    fn remove(&mut self, key: &str) -> Result<Option<()>> {
         if let Some(old_cmd_pos) = self.key_map.remove(key) {
             self.uncompacted += old_cmd_pos.len;
             let cmd = Command::rm(key).as_json()?;
@@ -124,7 +125,9 @@ impl KvStore {
             Ok(None)
         }
     }
+}
 
+impl KvStore {
     /// Open the KvStore at a given path.
     /// Return the KvStore.
     /// # Errors
@@ -132,7 +135,7 @@ impl KvStore {
     /// # Examples
     /// ```rust
     /// use tempfile::TempDir;
-    /// use kvs::engine::KvStore;
+    /// use kvs::KvStore;
     /// let temp_dir = TempDir::new().expect("");
     /// let kvs = KvStore::open(temp_dir.path()).expect("");
     /// ```
@@ -145,7 +148,7 @@ impl KvStore {
         // get file paths from directory, filter all without extension "log" and transfer to file stem
         let dir_path = dir_path.into();
         fs::create_dir_all(&dir_path)?;
-        let mut file_stems = collect_file_stems(&dir_path)?;
+        let mut file_stems = tools::collect_file_stems(&dir_path)?;
         if let Some(max) = file_stems.last() {
             generator.flush(max + 1);
         }
@@ -161,7 +164,7 @@ impl KvStore {
                 .write(true)
                 .open(file_path)?;
             let mut reader = BufReaderWithOffset::new(file)?;
-            uncompacted += read_log(file_stem, &mut key_map, &mut reader)?;
+            uncompacted += tools::read_log(file_stem, &mut key_map, &mut reader)?;
             reader_map.insert(file_stem, reader);
         }
 
@@ -220,7 +223,7 @@ impl KvStore {
     /// # Example
     /// ```rust
     /// use tempfile::TempDir;
-    /// use kvs::engine::KvStore;
+    /// use kvs::KvStore;
     /// let temp_dir = TempDir::new().unwrap();
     /// let mut store = KvStore::open(temp_dir.path()).unwrap();
     /// store.set_compact_threshold(500u64);

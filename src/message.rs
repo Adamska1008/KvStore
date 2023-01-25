@@ -30,7 +30,7 @@ impl Into<RESPType> for Request {
     fn into(self) -> RESPType {
         match self {
             Request::Set { key, value } => {
-                array!(bulk!("set"), bulk!(key), bulk!("value"))
+                array!(bulk!("set"), bulk!(key), bulk!(value))
             },
             Request::Get { key } => {
                 array!(bulk!("get"), bulk!(key))

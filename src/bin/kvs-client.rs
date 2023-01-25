@@ -1,12 +1,9 @@
 #![feature(let_chains)]
 #![feature(is_some_and)]
 
-use std::io::{Read, Write};
-use std::net::TcpStream;
 use clap::{Parser, Subcommand};
-use kvs::{KvsClient, Request, Result};
+use kvs::{KvsClient, Result};
 use std::string::String;
-use serde_resp::{array, bulk, RESPType};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]

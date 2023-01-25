@@ -1,16 +1,17 @@
 use std::net::{TcpListener, TcpStream, ToSocketAddrs};
 use serde_resp::RESPType;
-use crate::{GetResponse, KvStore, RemoveResponse, SetResponse, tools};
+use crate::{GetResponse, RemoveResponse, SetResponse, tools};
+use crate::engine::KvsEngine;
 use crate::Result;
 
-pub struct KvsServer {
-    engine: KvStore
+pub struct KvsServer<E: KvsEngine> {
+    engine: E
 }
 
-impl KvsServer {
-    pub fn new() -> Result<Self> {
+impl<E: KvsEngine> KvsServer<E> {
+    pub fn new(engine: E) -> Result<Self> {
         Ok(Self {
-            engine: KvStore::open(".")?
+            engine
         })
     }
 

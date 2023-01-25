@@ -1,9 +1,6 @@
 use std::fmt::{Display, Formatter};
-use std::io::{Read, Write};
-use std::net::{TcpListener, TcpStream};
 use clap::{Parser, ValueEnum};
-use serde_resp::{bulk, none, RESPType};
-use kvs::{GetResponse, KvsServer, RemoveResponse, Result, SetResponse, tools};
+use kvs::{KvsServer, Result};
 use kvs::KvStore;
 
 #[derive(Parser)]
@@ -35,7 +32,7 @@ fn main() -> Result<()> {
     log::info!("Running kvs server version {}", env!("CARGO_PKG_VERSION"));
     let args = Args::parse();
     let addr = if let Some(addr) = args.addr { addr } else { "127.0.0.1:4000".to_owned() };
-    let mut server = KvsServer::new()?;
+    let mut server = KvsServer::new(KvStore::open(".")?)?;
     log::info!("Listening to {}", addr);
     server.run(&addr)?;
     Ok(())
