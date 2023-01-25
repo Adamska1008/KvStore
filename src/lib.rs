@@ -6,4 +6,4 @@ mod message;
 
 pub use engine::KvStore;
 pub use error::*;
-pub use message::{Request};
+pub use message::{Request, GetResponse, SetResponse, RemoveResponse};

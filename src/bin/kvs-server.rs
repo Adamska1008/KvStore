@@ -3,7 +3,7 @@ use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use clap::{Parser, ValueEnum};
 use serde_resp::{bulk, none, RESPType};
-use kvs::Result;
+use kvs::{GetResponse, RemoveResponse, Result, SetResponse};
 use kvs::KvStore;
 
 #[derive(Parser)]
@@ -60,35 +60,26 @@ fn handle_connection(mut stream: TcpStream, kvs: &mut KvStore) {
         "get" => {
             let key = unwrap_bulk_str(&arr[1]);
             log::debug!("receive command: get {}", key);
-            let resp_value = if let Some(value) = kvs.get(&key).unwrap() {
-                bulk!(value)
-            } else {
-                none!()
-            };
-            let response = serde_resp::to_string(&resp_value).unwrap();
-            stream.write(response.as_bytes()).unwrap();
+            let rsp: RESPType = GetResponse::Ok(kvs.get(&key).unwrap()).into();
+            let rsp_str = serde_resp::to_string(&rsp).unwrap();
+            stream.write(rsp_str.as_bytes()).unwrap();
             stream.flush().unwrap();
         },
         "set" => {
             let key = unwrap_bulk_str(&arr[1]);
             let value = unwrap_bulk_str(&arr[2]);
             log::debug!("receive command: set {} {}", key, value);
-            kvs.set(&key, &value).unwrap();
-            let ok = RESPType::ok();
-            let response = serde_resp::to_string(&ok).unwrap();
-            stream.write(response.as_bytes()).unwrap();
+            let rsp: RESPType = SetResponse::Ok(kvs.set(&key, &value).unwrap()).into();
+            let rsp_str = serde_resp::to_string(&rsp).unwrap();
+            stream.write(rsp_str.as_bytes()).unwrap();
             stream.flush().unwrap();
         },
         "rm" => {
             let key = unwrap_bulk_str(&arr[1]);
             log::debug!("receive command: rm {}", key);
-            let resp_value = if kvs.remove(&key).unwrap() == None {
-                none!()
-            } else {
-                RESPType::ok()
-            };
-            let response = serde_resp::to_string(&resp_value).unwrap();
-            stream.write(response.as_bytes()).unwrap();
+            let rsp: RESPType = RemoveResponse::Ok(kvs.remove(&key).unwrap()).into();
+            let rsp_str = serde_resp::to_string(&rsp).unwrap();
+            stream.write(rsp_str.as_bytes()).unwrap();
             stream.flush().unwrap();
         }
         _ => {}

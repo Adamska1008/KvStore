@@ -1,4 +1,4 @@
-use serde_resp::{array, bulk, RESPType};
+use serde_resp::{array, bulk, err, none, RESPType, simple};
 
 #[derive(Debug)]
 pub enum Request {
@@ -27,7 +27,7 @@ impl Request {
 }
 
 impl Into<RESPType> for Request {
-    fn into(&self) -> RESPType {
+    fn into(self) -> RESPType {
         match self {
             Request::Set { key, value } => {
                 array!(bulk!("set"), bulk!(key), bulk!("value"))
@@ -38,6 +38,54 @@ impl Into<RESPType> for Request {
             Request::Remove { key } => {
                 array!(bulk!("rm"), bulk!(key))
             }
+        }
+    }
+}
+
+pub enum GetResponse {
+    Ok(Option<String>),
+    Err(String)
+}
+
+impl Into<RESPType> for GetResponse {
+    fn into(self) -> RESPType {
+        match self {
+            GetResponse::Ok(opt_str) => match opt_str {
+                Some(str) => bulk!(str),
+                None => none!()
+            },
+            GetResponse::Err(err) => err!(err)
+        }
+    }
+}
+
+pub enum SetResponse {
+    Ok(()),
+    Err(String)
+}
+
+impl Into<RESPType> for SetResponse {
+    fn into(self) -> RESPType {
+        match self {
+            SetResponse::Ok(()) => simple!("OK"),
+            SetResponse::Err(err) => err!(err)
+        }
+    }
+}
+
+pub enum RemoveResponse {
+    Ok(Option<()>),
+    Err(String)
+}
+
+impl Into<RESPType> for RemoveResponse {
+    fn into(self) -> RESPType {
+        match self {
+            RemoveResponse::Ok(opt) => match opt {
+                Some(()) => simple!("OK"),
+                None => none!()
+            }
+            RemoveResponse::Err(err) => err!(err)
         }
     }
 }
