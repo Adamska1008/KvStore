@@ -61,26 +61,20 @@ fn handle_connection(mut stream: TcpStream, kvs: &mut KvStore) {
             let key = unwrap_bulk_str(&arr[1]);
             log::debug!("receive command: get {}", key);
             let rsp: RESPType = GetResponse::Ok(kvs.get(&key).unwrap()).into();
-            let rsp_str = serde_resp::to_string(&rsp).unwrap();
-            stream.write(rsp_str.as_bytes()).unwrap();
-            stream.flush().unwrap();
+            serde_resp::to_writer(&rsp, &mut stream).unwrap();
         },
         "set" => {
             let key = unwrap_bulk_str(&arr[1]);
             let value = unwrap_bulk_str(&arr[2]);
             log::debug!("receive command: set {} {}", key, value);
             let rsp: RESPType = SetResponse::Ok(kvs.set(&key, &value).unwrap()).into();
-            let rsp_str = serde_resp::to_string(&rsp).unwrap();
-            stream.write(rsp_str.as_bytes()).unwrap();
-            stream.flush().unwrap();
+            serde_resp::to_writer(&rsp, &mut stream).unwrap();
         },
         "rm" => {
             let key = unwrap_bulk_str(&arr[1]);
             log::debug!("receive command: rm {}", key);
             let rsp: RESPType = RemoveResponse::Ok(kvs.remove(&key).unwrap()).into();
-            let rsp_str = serde_resp::to_string(&rsp).unwrap();
-            stream.write(rsp_str.as_bytes()).unwrap();
-            stream.flush().unwrap();
+            serde_resp::to_writer(&rsp, &mut stream).unwrap();
         }
         _ => {}
     }
@@ -90,11 +84,10 @@ fn main() -> Result<()> {
     env_logger::init();
     log::info!("Running kvs server version {}", env!("CARGO_PKG_VERSION"));
     let args = Args::parse();
-    let addr = if let Some(addr) = args.addr {addr} else {"127.0.0.1:4000".to_owned()};
-    log::info!("Listening to {}", addr);
+    let addr = if let Some(addr) = args.addr { addr } else { "127.0.0.1:4000".to_owned() };
     // log::info!("Using engine \"{}\"", args.engine.unwrap());
-
     let mut kvs = KvStore::open(".")?;
+    log::info!("Listening to {}", addr);
     let listener = TcpListener::bind(addr)?;
     for stream in listener.incoming() {
         let stream = stream.unwrap();

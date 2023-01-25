@@ -42,8 +42,7 @@ fn main() -> Result<()> {
     match &cli.command {
         Commands::Set { key, value } => {
             let command: RESPType = Request::set(key, value).into();
-            let cmd_str = serde_resp::to_string(&command).unwrap();
-            stream.write(cmd_str.as_bytes())?;
+            serde_resp::to_writer(&command, &mut stream).unwrap();
             let mut response = String::new();
             stream.read_to_string(&mut response).unwrap();
             println!("{response}");
@@ -51,9 +50,7 @@ fn main() -> Result<()> {
         },
         Commands::Get { key } => {
             let command: RESPType = Request::get(key).into();
-            let cmd_str= serde_resp::to_string(&command).unwrap();
-            stream.write(cmd_str.as_bytes())?;
-            stream.flush()?;
+            serde_resp::to_writer(&command, &mut stream).unwrap();
             let mut response = String::new();
             stream.read_to_string(&mut response).unwrap();
             let resp: RESPType = serde_resp::from_str(&response).unwrap();
@@ -68,9 +65,7 @@ fn main() -> Result<()> {
         },
         Commands::Remove { key } => {
             let command: RESPType = Request::Remove { key: key.clone() }.into();
-            let cmd_str = serde_resp::to_string(&command).unwrap();
-            stream.write(cmd_str.as_bytes())?;
-            stream.flush()?;
+            serde_resp::to_writer(&command, &mut stream).unwrap();
             let mut response = String::new();
             stream.read_to_string(&mut response).unwrap();
             let resp: RESPType = serde_resp::from_str(&response).unwrap();
