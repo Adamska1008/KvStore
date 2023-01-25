@@ -4,7 +4,7 @@
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use clap::{Parser, Subcommand};
-use kvs::{Request, Result};
+use kvs::{KvsClient, Request, Result};
 use std::string::String;
 use serde_resp::{array, bulk, RESPType};
 
@@ -38,47 +38,21 @@ enum Commands {
 fn main() -> Result<()> {
     let cli = Cli::parse();
     let addr = if let Some(addr) = cli.addr { addr } else { "127.0.0.1:4000".to_owned() };
-    let mut stream = TcpStream::connect(addr)?;
+    let mut client = KvsClient::connect(addr)?;
     match &cli.command {
-        Commands::Set { key, value } => {
-            let command: RESPType = Request::set(key, value).into();
-            serde_resp::to_writer(&command, &mut stream).unwrap();
-            let mut response = String::new();
-            stream.read_to_string(&mut response).unwrap();
-            println!("{response}");
-            Ok(())
-        },
+        Commands::Set { key, value } => client.set(key, value)?,
         Commands::Get { key } => {
-            let command: RESPType = Request::get(key).into();
-            serde_resp::to_writer(&command, &mut stream).unwrap();
-            let mut response = String::new();
-            stream.read_to_string(&mut response).unwrap();
-            let resp: RESPType = serde_resp::from_str(&response).unwrap();
-            // currently only bulk str
-            match resp {
-                RESPType::BulkString(buf) => {
-                    println!("{}", String::from_utf8(buf).unwrap())
-                }
-                _ => { println!() }
+            match client.get(key)? {
+                Some(value) => println!("{value}"),
+                None => println!()
             }
-            Ok(())
         },
         Commands::Remove { key } => {
-            let command: RESPType = Request::Remove { key: key.clone() }.into();
-            serde_resp::to_writer(&command, &mut stream).unwrap();
-            let mut response = String::new();
-            stream.read_to_string(&mut response).unwrap();
-            let resp: RESPType = serde_resp::from_str(&response).unwrap();
-            match resp {
-                RESPType::SimpleString(str) => {
-                    println!("{str}");
-                },
-                RESPType::None => {
-                    println!("Key not found");
-                }
-                _ => {}
+            match client.rm(key)? {
+                Some(msg) => println!("{msg}"),
+                None => println!("Key not found")
             }
-            Ok(())
         }
     }
+    Ok(())
 }

@@ -3,7 +3,7 @@ use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use clap::{Parser, ValueEnum};
 use serde_resp::{bulk, none, RESPType};
-use kvs::{GetResponse, RemoveResponse, Result, SetResponse};
+use kvs::{GetResponse, KvsServer, RemoveResponse, Result, SetResponse, tools};
 use kvs::KvStore;
 
 #[derive(Parser)]
@@ -30,68 +30,13 @@ impl Display for Engine {
     }
 }
 
-fn unwrap_bulk_str(resp: &RESPType) -> String {
-    if let RESPType::BulkString(bulk_str) = resp {
-        String::from_utf8(bulk_str.clone()).unwrap()
-    } else {
-        panic!("not a resp bulk str")
-    }
-}
-
-fn read_to_end(stream: &mut TcpStream) -> String {
-    let mut received = vec![];
-    let mut buffer = [0u8; 512];
-    loop {
-        let bytes_read = stream.read(&mut buffer).unwrap();
-        received.extend_from_slice(&buffer[..bytes_read]);
-        if bytes_read < 512 {
-            break;
-        }
-    }
-    String::from_utf8(received).unwrap()
-}
-
-fn handle_connection(mut stream: TcpStream, kvs: &mut KvStore) {
-    let input=  read_to_end(&mut stream);
-    let command: RESPType = serde_resp::from_str(&input).unwrap();
-    let arr = if let RESPType::Array(arr) = command { arr } else { panic!("not a resp array") };
-    let cmd = unwrap_bulk_str(&arr[0]);
-    match cmd.as_str() {
-        "get" => {
-            let key = unwrap_bulk_str(&arr[1]);
-            log::debug!("receive command: get {}", key);
-            let rsp: RESPType = GetResponse::Ok(kvs.get(&key).unwrap()).into();
-            serde_resp::to_writer(&rsp, &mut stream).unwrap();
-        },
-        "set" => {
-            let key = unwrap_bulk_str(&arr[1]);
-            let value = unwrap_bulk_str(&arr[2]);
-            log::debug!("receive command: set {} {}", key, value);
-            let rsp: RESPType = SetResponse::Ok(kvs.set(&key, &value).unwrap()).into();
-            serde_resp::to_writer(&rsp, &mut stream).unwrap();
-        },
-        "rm" => {
-            let key = unwrap_bulk_str(&arr[1]);
-            log::debug!("receive command: rm {}", key);
-            let rsp: RESPType = RemoveResponse::Ok(kvs.remove(&key).unwrap()).into();
-            serde_resp::to_writer(&rsp, &mut stream).unwrap();
-        }
-        _ => {}
-    }
-}
-
 fn main() -> Result<()> {
     env_logger::init();
     log::info!("Running kvs server version {}", env!("CARGO_PKG_VERSION"));
     let args = Args::parse();
     let addr = if let Some(addr) = args.addr { addr } else { "127.0.0.1:4000".to_owned() };
-    // log::info!("Using engine \"{}\"", args.engine.unwrap());
-    let mut kvs = KvStore::open(".")?;
+    let mut server = KvsServer::new()?;
     log::info!("Listening to {}", addr);
-    let listener = TcpListener::bind(addr)?;
-    for stream in listener.incoming() {
-        let stream = stream.unwrap();
-        handle_connection(stream, &mut kvs);
-    }
+    server.run(&addr)?;
     Ok(())
 }
