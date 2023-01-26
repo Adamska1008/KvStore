@@ -8,8 +8,8 @@ use std::string::String;
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
-    #[arg(short, long, value_name = "IP-PORT")]
-    addr: Option<String>,
+    #[arg(short, long, value_name = "PORT", value_parser = clap::value_parser!(u16).range(1..))]
+    port: Option<String>,
     #[command(subcommand)]
     command: Commands
 }
@@ -34,8 +34,8 @@ enum Commands {
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
-    let addr = if let Some(addr) = cli.addr { addr } else { "127.0.0.1:4000".to_owned() };
-    let mut client = KvsClient::connect(addr)?;
+    let port = if let Some(port) = cli.port { port } else { "4000".to_owned() };
+    let mut client = KvsClient::connect("127.0.0.1".to_owned() + &port)?;
     match &cli.command {
         Commands::Set { key, value } => client.set(key, value)?,
         Commands::Get { key } => {
@@ -50,6 +50,6 @@ fn main() -> Result<()> {
                 None => println!("Key not found")
             }
         }
-    }
+    };
     Ok(())
 }

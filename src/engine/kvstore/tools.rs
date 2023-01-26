@@ -126,3 +126,46 @@ pub fn new_reader(dir_path: &(impl Into<PathBuf> + Clone), file_stem: u64) -> Re
     let reader = BufReaderWithOffset::new(new_log)?;
     Ok(reader)
 }
+
+#[cfg(test)]
+mod filename_generator_tests {
+    use super::FileNameGenerator;
+
+    // should generate string "0.txt"
+    #[test]
+    fn generate_name_test() {
+        let gen = FileNameGenerator::new("txt");
+        assert_eq!(gen.current(), "0.txt");
+    }
+
+    // should generate string "2.txt"
+    #[test]
+    fn next_name_test() {
+        let mut gen = FileNameGenerator::new("txt");
+        gen.next();
+        gen.next();
+        assert_eq!(gen.current(), "2.txt");
+    }
+
+    // should not flush
+    #[test]
+    fn no_flush_name_test() {
+        let mut gen = FileNameGenerator::new("txt");
+        gen.next();
+        gen.next();
+        assert_eq!(gen.current(), "2.txt");
+        gen.flush(1);
+        assert_eq!(gen.current(), "2.txt");
+    }
+
+    // should flush
+    #[test]
+    fn flush_name_test() {
+        let mut gen = FileNameGenerator::new("txt");
+        gen.next();
+        gen.next();
+        assert_eq!(gen.current(), "2.txt");
+        gen.flush(3);
+        assert_eq!(gen.current(), "3.txt");
+    }
+}

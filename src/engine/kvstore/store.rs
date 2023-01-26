@@ -34,6 +34,7 @@ impl KvsEngine for KvStore {
     /// # Examples
     /// ```rust
     /// use tempfile::TempDir;
+    /// use kvs::engine::KvsEngine;
     /// use kvs::KvStore;
     /// let temp_dir = TempDir::new().unwrap();
     /// let mut kvs = KvStore::open(temp_dir.path()).unwrap();
@@ -65,6 +66,7 @@ impl KvsEngine for KvStore {
     /// # Examples
     /// ```
     /// use tempfile::TempDir;
+    /// use kvs::engine::KvsEngine;
     /// use kvs::KvStore;
     /// let temp_dir = TempDir::new().expect("");
     /// let mut kvs = KvStore::open(temp_dir.path()).unwrap();
@@ -104,6 +106,7 @@ impl KvsEngine for KvStore {
     /// # Examples
     /// ```
     /// use tempfile::TempDir;
+    /// use kvs::engine::KvsEngine;
     /// use kvs::KvStore;
     /// let temp_dir = TempDir::new().expect("");
     /// let mut kvs = KvStore::open(temp_dir.path()).unwrap();
@@ -241,5 +244,138 @@ impl KvStore {
         let writer = tools::new_writer(&self.dir_path, self.generator.current)?;
         self.writer = writer;
         Ok(())
+    }
+}
+
+
+#[cfg(test)]
+mod store_tests {
+    use tempfile::TempDir;
+    use walkdir::WalkDir;
+    use super::KvsEngine;
+    use super::KvStore;
+    use super::Result;
+
+    // Should get previous stored value after drop store and reopen
+    #[test]
+    fn get_stored_value() -> Result<()> {
+        let temp_dir = TempDir::new().unwrap();
+        let mut store = KvStore::open(temp_dir.path())?;
+
+        store.set("key1", "value1")?;
+        drop(store);
+        let mut store = KvStore::open(temp_dir.path())?;
+        store.set("key2", "value2")?;
+        drop(store);
+
+        let mut store = KvStore::open(temp_dir.path())?;
+        assert_eq!(store.get("key1")?, Some("value1".to_owned()));
+        assert_eq!(store.get("key2")?, Some("value2".to_owned()));
+
+        Ok(())
+    }
+
+    // Should overwrite existent value in any case
+    #[test]
+    fn overwrite_value() -> Result<()> {
+        let temp_dir = TempDir::new().unwrap();
+        let mut store = KvStore::open(temp_dir.path())?;
+        store.set("key1", "value1")?;
+        assert_eq!(store.get("key1")?, Some("value1".to_owned()));
+        store.set("key1", "value2")?;
+        assert_eq!(store.get("key1")?, Some("value2".to_owned()));
+        drop(store);
+
+        let mut store = KvStore::open(temp_dir.path())?;
+        assert_eq!(store.get("key1")?, Some("value2".to_owned()));
+        store.set("key1", "value3")?;
+        assert_eq!(store.get("key1")?, Some("value3".to_owned()));
+        Ok(())
+    }
+
+    // Should get None when key is not exist
+    #[test]
+    fn get_non_existent_key() -> Result<()> {
+        let temp_dir = TempDir::new().unwrap();
+        let mut store = KvStore::open(temp_dir.path())?;
+        store.set("key1", "value1")?;
+        assert_eq!(store.get("key2")?, None);
+        drop(store);
+
+        let mut store = KvStore::open(temp_dir.path())?;
+        assert_eq!(store.get("key2")?, None);
+        Ok(())
+    }
+
+    // Should get None when remove non-existent key
+    #[test]
+    fn remove_non_existent_key() -> Result<()> {
+        let temp_dir = TempDir::new().unwrap();
+        let mut store = KvStore::open(temp_dir.path())?;
+        assert_eq!(store.remove("key1")?, None);
+        Ok(())
+    }
+
+    // Should get Some(()) when remove key and get None when get removed key
+    #[test]
+    fn remove_key() -> Result<()> {
+        let temp_dir = TempDir::new().unwrap();
+        let mut store = KvStore::open(temp_dir.path())?;
+        store.set("key1", "value1")?;
+        assert_eq!(store.get("key1")?, Some("value1".to_owned()));
+        drop(store);
+        let mut store = KvStore::open(temp_dir.path())?;
+        assert_eq!(store.remove("key1")?, Some(()));
+        assert_eq!(store.get("key1")?, None);
+        drop(store);
+        let mut store = KvStore::open(temp_dir.path())?;
+        assert_eq!(store.get("key1")?, None);
+        Ok(())
+    }
+
+    // Insert data until total size of the directory decreases.
+    // Test data correctness after compaction.
+    #[test]
+    fn compaction() -> Result<()> {
+        let temp_dir = TempDir::new().expect("unable to create temporary working directory");
+        let mut store = KvStore::open(temp_dir.path())?;
+
+        let dir_size = || {
+            let entries = WalkDir::new(temp_dir.path()).into_iter();
+            let len: walkdir::Result<u64> = entries
+                .map(|res| {
+                    res.and_then(|entry| entry.metadata())
+                        .map(|metadata| metadata.len())
+                })
+                .sum();
+            len.expect("fail to get directory size")
+        };
+
+        let mut current_size = dir_size();
+        for iter in 0..1000 {
+            for key_id in 0..1000 {
+                let key = format!("key{}", key_id);
+                let value = format!("{}", iter);
+                store.set(&key, &value)?;
+            }
+
+            let new_size = dir_size();
+            if new_size > current_size {
+                current_size = new_size;
+                continue;
+            }
+            // Compaction triggered
+
+            drop(store);
+            // reopen and check content
+            let mut store = KvStore::open(temp_dir.path())?;
+            for key_id in 0..1000 {
+                let key = format!("key{}", key_id);
+                assert_eq!(store.get(&key)?, Some(format!("{}", iter)));
+            }
+            return Ok(());
+        }
+
+        panic!("No compaction detected");
     }
 }

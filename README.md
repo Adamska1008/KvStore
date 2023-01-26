@@ -41,3 +41,7 @@ Options:
 To use `KvStore` in your code(not advised, this is simply a personal coding practise), `import Kvs::KvStore`.
 
 For more information, run `cargo doc --open` to see the document of `KvStore`.
+
+## Comparison to talent-plan standard code
+* The store methods accept `&str` instead of `String` as args.
+* The `rm` method will return `Some(())` when found key, and `None` when key is not found.

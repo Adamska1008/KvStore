@@ -1,6 +1,8 @@
 mod kvstore;
+mod sled;
 
-pub use kvstore::KvStore;
+pub use self::kvstore::KvStore;
+pub use self::sled::Sled;
 
 use crate::Result;
 

@@ -1,9 +1,10 @@
 use failure_derive::Fail;
-use std::{io, result};
-use serde_resp::Error;
+use std::{io, result, string};
 
 #[derive(Fail, Debug)]
 pub enum KvError {
+    #[fail(display = "{}", _0)]
+    Message(String), // wrap of RESPError(String)
     #[fail(display = "IO error: {}", _0)]
     IoError(#[cause] io::Error),
     #[fail(display = "Key {} not found.", _0)]
@@ -17,7 +18,11 @@ pub enum KvError {
     #[fail(display = "Unknown command")]
     UnknownCommand,
     #[fail(display = "Missing arguments")]
-    MissingArguments
+    MissingArguments,
+    #[fail(display = "Sled error: {}", _0)]
+    SledError(sled::Error),
+    #[fail(display = "From utf8 error: {}", _0)]
+    FromUtf8Error(string::FromUtf8Error)
 }
 
 impl KvError {
@@ -29,7 +34,10 @@ impl KvError {
             KvError::RESPError(_) => KvErrorKind::RESPError,
             KvError::UnexpectedCmdType(_) => KvErrorKind::UnexpectedCmdType,
             KvError::UnknownCommand => KvErrorKind::UnknownCommand,
-            KvError::MissingArguments => KvErrorKind::MissingArguments
+            KvError::MissingArguments => KvErrorKind::MissingArguments,
+            KvError::FromUtf8Error(_) => KvErrorKind::FromUtf8Error,
+            KvError::Message(_) => KvErrorKind::Message,
+            KvError::SledError(_) => KvErrorKind::SledError
         }
     }
 }
@@ -47,8 +55,20 @@ impl From<serde_json::Error> for KvError {
 }
 
 impl From<serde_resp::Error> for KvError {
-    fn from(value: Error) -> Self {
+    fn from(value: serde_resp::Error) -> Self {
         KvError::RESPError(value)
+    }
+}
+
+impl From<sled::Error> for KvError {
+    fn from(value: sled::Error) -> Self {
+        KvError::SledError(value)
+    }
+}
+
+impl From<string::FromUtf8Error> for KvError {
+    fn from(value: string::FromUtf8Error) -> Self {
+        KvError::FromUtf8Error(value)
     }
 }
 
@@ -56,11 +76,14 @@ pub type Result<T> = result::Result<T, KvError>;
 
 #[derive(Eq, PartialEq)]
 pub enum KvErrorKind {
+    Message,
     IoError,
     KeyNotFound,
     JsonError,
     RESPError,
     UnexpectedCmdType,
     UnknownCommand,
-    MissingArguments
+    MissingArguments,
+    FromUtf8Error,
+    SledError
 }

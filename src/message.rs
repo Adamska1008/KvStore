@@ -29,15 +29,9 @@ impl Request {
 impl Into<RESPType> for Request {
     fn into(self) -> RESPType {
         match self {
-            Request::Set { key, value } => {
-                array!(bulk!("set"), bulk!(key), bulk!(value))
-            },
-            Request::Get { key } => {
-                array!(bulk!("get"), bulk!(key))
-            },
-            Request::Remove { key } => {
-                array!(bulk!("rm"), bulk!(key))
-            }
+            Request::Set { key, value } => array!(bulk!("set"), bulk!(key), bulk!(value)),
+            Request::Get { key } => array!(bulk!("get"), bulk!(key)),
+            Request::Remove { key } => array!(bulk!("rm"), bulk!(key)),
         }
     }
 }
