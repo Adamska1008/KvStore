@@ -1,6 +1,3 @@
-# Warning: Switch to `core` branch
-The README.md file is applied to `core` branch. In current branch I'm try to build a c/s program based on the core and the README here is not applicable.
-
 # KvStore
 A simple key-value database built under the [guidance](https://github.com/pingcap/talent-plan/tree/master/courses/rust/projects/project-2) of [talent-plan](https://github.com/pingcap/talent-plan).
 
@@ -13,13 +10,41 @@ This binary use several unstable features of rust. To build it, using nightly ve
 In the root directory, run `cargo build` to build the program.
 
 ## Usage
-Currently, it supports only few commands:
-* `Kvs set <KEY> <VALUE>`: Store a key-value pair to database.
-* `Kvs get <KEY>`: Get value of key from database. Exit with non-zero if `<KEY>` is not in database.
-* `Kvs rm <KEY>`: Remove a key-value pair with given key. Exit with non-zero if `<KEY>` is not in database.
+There are two binaries:
+* `kvs-client`: the client of database
+* `kvs-server`: the server of database
 
-### Options
-* `-h --help` display help information like:
+### kvs-server
+This program run a server, listen to a binding port and ready for connections. The messages delivered are in RESP format and use this repository([link](https://github.com/Adamska1008/Serde-Resp)).
+
+`./kvs-server` will run the binary in default set. There are two options available:
+* `-p <PORT>` or `--port <PORT>`, set the listened port. Default `4000`.
+* `-e <ENGINE>` or `--engine <ENGINE>`, set the engine of database. The database supports two engines:
+  * `kvs`, self written engine, default.
+  * `sled`, use the api of sled([link](https://github.com/spacejam/sled)).
+
+use `--help` to see the detail.
+```bash
+Demo program that demonstrates the usage of "KvStore" core
+
+Usage: kvs-server.exe [OPTIONS]
+
+Options:
+  -p, --port <PORT>
+  -e, --engine <ENGINE>  [possible values: kvs, sled]
+  -h, --help             Print help
+  -V, --version          Print version
+```
+
+
+### kvs-client
+Currently, it supports only few commands:
+* `set <KEY> <VALUE>`: Store a key-value pair to database.
+* `get <KEY>`: Get value of key from database. Exit with non-zero if `<KEY>` is not in database.
+* `rm <KEY>`: Remove a key-value pair with given key. Exit with non-zero if `<KEY>` is not in database.
+* `-p --port <PORT>`: The connecting port, default `4000`.
+
+Use `--help` to see the detail.
 ```bash
 Demo program that demonstrates the usage of "KvStore" core.
 
@@ -35,10 +60,9 @@ Options:
   -h, --help     Print help information
   -V, --version  Print version information
 ```
-* `-V --version` Print version information
 
 ### Use as package
-To use `KvStore` in your code(not advised, this is simply a personal coding practise), `import Kvs::KvStore`.
+To use `KvStore` in your code(not advised, this is simply a student coding practise), `import kvs::engine::KvStore`.
 
 For more information, run `cargo doc --open` to see the document of `KvStore`.
 

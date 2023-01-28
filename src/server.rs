@@ -1,7 +1,5 @@
 use std::io::Write;
 use std::net::{TcpListener, TcpStream, ToSocketAddrs};
-use clap::Error;
-use log::error;
 use serde_resp::RESPType;
 use crate::{GetResponse, KvError, RemoveResponse, SetResponse, tools};
 use crate::engine::KvsEngine;
@@ -64,7 +62,7 @@ impl<E: KvsEngine> KvsServer<E> {
         Ok(())
     }
 
-    pub fn handle_err(&mut self, err: KvError, mut stream: &mut TcpStream) {
+    pub fn handle_err(&mut self, err: KvError, stream: &mut TcpStream) {
         stream.write_all(format!("{}", err).as_bytes()).unwrap();
     }
 }
