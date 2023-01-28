@@ -1,4 +1,4 @@
-use std::io::Read;
+use std::io::{Read, Write};
 use std::net::{TcpStream, ToSocketAddrs};
 use serde_resp::{RESPType};
 use crate::{KvError, Request, Result};
@@ -17,7 +17,8 @@ impl KvsClient {
 
     pub fn set(&mut self, key: &str, value: &str) -> Result<()> {
         let command: RESPType = Request::set(key, value).into();
-        serde_resp::to_writer(&command, &mut self.stream).unwrap();
+        let cmd_str = serde_resp::to_string(&command)?;
+        self.stream.write_all(cmd_str.as_bytes())?;
         // let mut response = String::new();
         // self.stream.read_to_string(&mut response).unwrap();
         let response: RESPType = serde_resp::from_reader(&mut self.stream)?;
@@ -30,7 +31,8 @@ impl KvsClient {
 
     pub fn get(&mut self, key: &str) -> Result<Option<String>> {
         let command: RESPType = Request::get(key).into();
-        serde_resp::to_writer(&command, &mut self.stream).unwrap();
+        let cmd_str = serde_resp::to_string(&command)?;
+        self.stream.write_all(cmd_str.as_bytes())?;
         let mut response = String::new();
         self.stream.read_to_string(&mut response).unwrap();
         let resp: RESPType = serde_resp::from_str(&response).unwrap();
@@ -47,13 +49,15 @@ impl KvsClient {
 
     pub fn rm(&mut self, key: &str) -> Result<Option<String>> {
         let command: RESPType = Request::remove(key).into();
-        serde_resp::to_writer(&command, &mut self.stream).unwrap();
+        let cmd_str = serde_resp::to_string(&command)?;
+        self.stream.write_all(cmd_str.as_bytes())?;
         let mut response = String::new();
         self.stream.read_to_string(&mut response).unwrap();
         let response: RESPType = serde_resp::from_str(&response).unwrap();
         match response {
             RESPType::SimpleString(msg) => Ok(Some(msg)),
             RESPType::Error(err) => Err(KvError::Message(err)),
+            RESPType::None => Ok(None),
             _ => Err(KvError::Message("Unknown Error".to_owned()))
         }
     }

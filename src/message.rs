@@ -36,6 +36,10 @@ impl Into<RESPType> for Request {
     }
 }
 
+/// May deserialize as:
+/// `RESPType::BulkString(str)`
+/// `RESPType::None`
+/// `RESPType::Error(err)`
 pub enum GetResponse {
     Ok(Option<String>),
     Err(String)
@@ -53,6 +57,9 @@ impl Into<RESPType> for GetResponse {
     }
 }
 
+/// May deserialize as:
+/// `RESPType::SimpleString("OK")`
+/// `RESPType::Error(err)`
 pub enum SetResponse {
     Ok(()),
     Err(String)
@@ -67,6 +74,10 @@ impl Into<RESPType> for SetResponse {
     }
 }
 
+/// May deserialize as:
+/// `RESPType::SimpleString("OK")`
+/// `RESPType::None`
+/// `RESPType::Error(err)`
 pub enum RemoveResponse {
     Ok(Option<()>),
     Err(String)

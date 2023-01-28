@@ -1,6 +1,9 @@
+use std::io::Write;
 use std::net::{TcpListener, TcpStream, ToSocketAddrs};
+use clap::Error;
+use log::error;
 use serde_resp::RESPType;
-use crate::{GetResponse, RemoveResponse, SetResponse, tools};
+use crate::{GetResponse, KvError, RemoveResponse, SetResponse, tools};
 use crate::engine::KvsEngine;
 use crate::Result;
 
@@ -19,9 +22,10 @@ impl<E: KvsEngine> KvsServer<E> {
         let listener = TcpListener::bind(&addr)?;
         for stream in listener.incoming() {
             match stream {
-                Ok(stream) => {
-                    if let Err(err) = self.serve(stream) {
-                        log::error!("Error on serving client: {}", err)
+                Ok(mut stream) => {
+                    if let Err(err) = self.serve(&mut stream) {
+                        log::error!("Error on serving client: {}", err);
+                        self.handle_err(err, &mut stream);
                     }
                 }
                 Err(err) => log::error!("Connection failed: {}", err)
@@ -30,7 +34,7 @@ impl<E: KvsEngine> KvsServer<E> {
         Ok(())
     }
 
-    pub fn serve(&mut self, mut stream: TcpStream) -> Result<()> {
+    pub fn serve(&mut self, mut stream: &mut TcpStream) -> Result<()> {
         let input = tools::read_to_end(&mut stream);
         let command: RESPType = serde_resp::from_str(&input)?;
         let arr = if let RESPType::Array(arr) = command { arr } else { panic!("not a resp array") };
@@ -58,5 +62,9 @@ impl<E: KvsEngine> KvsServer<E> {
             _ => {}
         }
         Ok(())
+    }
+
+    pub fn handle_err(&mut self, err: KvError, mut stream: &mut TcpStream) {
+        stream.write_all(format!("{}", err).as_bytes()).unwrap();
     }
 }

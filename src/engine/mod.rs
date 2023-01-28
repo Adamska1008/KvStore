@@ -1,5 +1,5 @@
-mod kvstore;
-mod sled;
+pub mod kvstore;
+pub mod sled;
 
 pub use self::kvstore::KvStore;
 pub use self::sled::Sled;

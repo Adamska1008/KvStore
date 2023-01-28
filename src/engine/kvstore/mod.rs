@@ -1,6 +1,6 @@
 mod command;
 mod io;
-mod store;
-mod tools;
+pub mod store;
+pub mod tools;
 
 pub use store::KvStore;

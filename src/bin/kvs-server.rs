@@ -1,14 +1,18 @@
+use std::env;
 use std::fmt::{Display, Formatter};
-use clap::{Parser, ValueEnum};
+use clap::{arg, Parser, ValueEnum};
 use kvs::{KvsServer, Result};
 use kvs::engine::Sled;
 use kvs::KvStore;
 
+const DEFAULT_PORT: u16 = 7000;
+const DEFAULT_ENGINE: Engine = Engine::Kvs;
+
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    #[arg(short, long, value_name = "IP-PORT")]
-    addr: Option<String>,
+    #[arg(short, long, value_name = "PORT", value_parser = clap::value_parser!(u16).range(1..))]
+    port: Option<u16>,
     #[arg(short, long, value_enum)]
     engine: Option<Engine>
 }
@@ -29,11 +33,13 @@ impl Display for Engine {
 }
 
 fn main() -> Result<()> {
+    env::set_var("RUST_LOG", "debug");
     env_logger::init();
     log::info!("Running kvs server version {}", env!("CARGO_PKG_VERSION"));
     let args = Args::parse();
-    let addr = if let Some(addr) = args.addr { addr } else { "127.0.0.1:4000".to_owned() };
-    let engine = if let Some(engine) = args.engine { engine } else { Engine::Kvs };
+    let port = args.port.unwrap_or_else(|| DEFAULT_PORT);
+    let addr = format!("127.0.0.1:{}", port);
+    let engine = args.engine.unwrap_or_else(|| DEFAULT_ENGINE);
     match engine {
         Engine::Kvs =>  {
             let mut server = KvsServer::new(KvStore::open(".")?)?;

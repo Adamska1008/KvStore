@@ -45,3 +45,5 @@ For more information, run `cargo doc --open` to see the document of `KvStore`.
 ## Comparison to talent-plan standard code
 * The store methods accept `&str` instead of `String` as args.
 * The `rm` method will return `Some(())` when found key, and `None` when key is not found.
+* Client will produce empty output when get a non-existent key, instead of "Key not found" which may be confused when the value is "Key not found".
+* Client will not exit with error when remove a non-existent key.

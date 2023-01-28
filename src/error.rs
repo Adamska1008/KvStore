@@ -11,7 +11,7 @@ pub enum KvError {
     KeyNotFound(String),
     #[fail(display = "Json error: {}", _0)]
     JsonError(#[cause] serde_json::Error),
-    #[fail(display = "resp error: {}", _0)]
+    #[fail(display = "Resp error: {}", _0)]
     RESPError(#[cause] serde_resp::Error),
     #[fail(display = "Unexpected Command Type: {}", _0)]
     UnexpectedCmdType(String),

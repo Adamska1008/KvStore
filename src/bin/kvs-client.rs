@@ -9,7 +9,7 @@ use std::string::String;
 #[command(author, version, about, long_about = None)]
 struct Cli {
     #[arg(short, long, value_name = "PORT", value_parser = clap::value_parser!(u16).range(1..))]
-    port: Option<String>,
+    port: Option<u16>,
     #[command(subcommand)]
     command: Commands
 }
@@ -18,7 +18,7 @@ struct Cli {
 enum Commands {
     #[command(about = "Demo program that demonstrates the usage of \"KvStore\" core", long_about = None)]
     Get {
-        key: String
+        key: String,
     },
     #[command(about = "Set key-value string pair into kv store", long_about = None)]
     Set {
@@ -34,8 +34,8 @@ enum Commands {
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
-    let port = if let Some(port) = cli.port { port } else { "4000".to_owned() };
-    let mut client = KvsClient::connect("127.0.0.1".to_owned() + &port)?;
+    let port = cli.port.unwrap_or_else(|| 4000);
+    let mut client = KvsClient::connect("127.0.0.1:".to_owned() + &port.to_string())?;
     match &cli.command {
         Commands::Set { key, value } => client.set(key, value)?,
         Commands::Get { key } => {
