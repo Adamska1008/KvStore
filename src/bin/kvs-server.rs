@@ -5,7 +5,7 @@ use kvs::{KvsServer, Result};
 use kvs::engine::Sled;
 use kvs::KvStore;
 
-const DEFAULT_PORT: u16 = 7000;
+const DEFAULT_PORT: u16 = 4000;
 const DEFAULT_ENGINE: Engine = Engine::Kvs;
 
 #[derive(Parser)]

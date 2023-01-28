@@ -263,6 +263,13 @@ mod cli_tests {
 
         Command::cargo_bin("kvs-client")
             .unwrap()
+            .args(&["--port", port, "get", "key2"])
+            .current_dir(&temp_dir)
+            .assert()
+            .stdout(str::contains("value3"));
+
+        Command::cargo_bin("kvs-client")
+            .unwrap()
             .args(&["--port", port, "rm", "key1"])
             .current_dir(&temp_dir)
             .assert()
@@ -270,7 +277,7 @@ mod cli_tests {
 
         let assert = rx.recv().unwrap();
 
-        let (tx, rx) = mpsc::sync_channel(0);
+        // let (tx, rx) = mpsc::sync_channel(0);
         let mut server = Command::cargo_bin("kvs-server").unwrap();
         server
             .args(&["--engine", engine, "--port", port])
@@ -278,21 +285,22 @@ mod cli_tests {
             .timeout(Duration::from_secs(2));
         let server_handle = thread::spawn(move || {
             let assert = server.assert();
-            tx.send(assert).unwrap();
         });
 
+        thread::sleep(Duration::from_secs(1));
         Command::cargo_bin("kvs-client")
             .unwrap()
             .args(&["--port", port, "get", "key2"])
             .current_dir(&temp_dir)
             .assert()
             .stdout(str::contains("value3"));
+        server_handle.join().unwrap();
 
         Ok(())
     }
 
     #[test]
     fn cli_access_server_kvs_engine() -> Result<()>{
-        cli_access_server("kvs", "6007")
+        cli_access_server("kvs", "6006")
     }
 }

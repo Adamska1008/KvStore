@@ -5,6 +5,8 @@ use clap::{Parser, Subcommand};
 use kvs::{KvsClient, Result};
 use std::string::String;
 
+const DEFAULT_PORT: u16 = 4000;
+
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
@@ -34,7 +36,7 @@ enum Commands {
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
-    let port = cli.port.unwrap_or_else(|| 4000);
+    let port = cli.port.unwrap_or_else(|| DEFAULT_PORT);
     let mut client = KvsClient::connect("127.0.0.1:".to_owned() + &port.to_string())?;
     match &cli.command {
         Commands::Set { key, value } => client.set(key, value)?,
