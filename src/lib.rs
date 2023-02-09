@@ -4,6 +4,7 @@ pub mod client;
 pub mod server;
 pub mod message;
 pub mod tools;
+pub mod thread_pool;
 
 pub use engine::{KvStore, };
 pub use error::*;
