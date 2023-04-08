@@ -9,6 +9,9 @@ This binary use several unstable features of rust. To build it, using nightly ve
 ### cargo build
 In the root directory, run `cargo build` to build the program.
 
+### Serde-Resp
+The project depends [`Serde-Resp`](https://github.com/Adamska1008/Serde-Resp)(another project of mine).
+
 ## Usage
 There are two binaries:
 * `kvs-client`: the client of database
